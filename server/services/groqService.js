@@ -1,5 +1,4 @@
 const Groq = require('groq-sdk');
-const fs = require('fs');
 const pdf = require('pdf-parse');
 
 const apiKey = process.env.GROQ_API_KEY;
@@ -53,15 +52,21 @@ function validateAnalysis(analysis) {
   return normalized;
 }
 
-async function extractPdfText(filePath) {
-  const fileBuffer = fs.readFileSync(filePath);
-  const data = await pdf(fileBuffer);
+async function extractPdfText(fileBuffer) {
+  if (!fileBuffer || !Buffer.isBuffer(fileBuffer)) {
+    throw new Error('Invalid PDF buffer.');
+  }
 
-  if (!data || !data.text || data.text.trim().length < 20) {
+  console.log('PDF buffer size:', fileBuffer.length);
+  const data = await pdf(fileBuffer);
+  const text = (data.text || '').trim();
+  console.log('Extracted PDF text length:', text.length);
+
+  if (text.length < 20) {
     throw new Error('Could not extract meaningful text from the uploaded PDF.');
   }
 
-  return data.text;
+  return text;
 }
 
 async function analyzeResumeText(resumeText) {

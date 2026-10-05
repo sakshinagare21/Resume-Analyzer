@@ -1,4 +1,3 @@
-const fs = require('fs');
 const pool = require('../config/db');
 const { extractPdfText, analyzeResumeText } = require('../services/groqService');
 
@@ -8,7 +7,7 @@ async function analyzeResume(req, res, next) {
       return res.status(400).json({ success: false, message: 'Please upload a PDF resume.' });
     }
 
-    const extractedText = await extractPdfText(req.file.path);
+    const extractedText = await extractPdfText(req.file.buffer);
     const analysis = await analyzeResumeText(extractedText);
 
     const result = await pool.query(
@@ -27,8 +26,6 @@ async function analyzeResume(req, res, next) {
         JSON.stringify(analysis.suggestions),
       ]
     );
-
-    fs.unlink(req.file.path, () => {});
 
     return res.status(201).json({
       success: true,
@@ -98,8 +95,31 @@ async function getAnalysisHistory(req, res, next) {
   }
 }
 
+async function deleteAnalysis(req, res, next) {
+  try {
+    const { id } = req.params;
+    if (!/^\d+$/.test(id)) {
+      return res.status(400).json({ success: false, message: 'Analysis ID must be a number.' });
+    }
+
+    const result = await pool.query(
+      'DELETE FROM resume_analysis WHERE id = $1 RETURNING id',
+      [id]
+    );
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({ success: false, message: 'Analysis not found.' });
+    }
+
+    return res.json({ success: true, data: { id: result.rows[0].id } });
+  } catch (error) {
+    next(error);
+  }
+}
+
 module.exports = {
   analyzeResume,
   getAnalysis,
   getAnalysisHistory,
+  deleteAnalysis,
 };

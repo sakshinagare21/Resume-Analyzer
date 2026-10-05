@@ -299,6 +299,10 @@ summary:focus-visible {
 .table-score small { color: #8a968f; font-size: 10px; font-weight: 500; }
 .table-link { color: var(--green); font-size: 11px; font-weight: 700; white-space: nowrap; }
 .table-link span { margin-left: 4px; }
+.history-actions { display: flex; align-items: center; gap: 16px; white-space: nowrap; }
+.delete-link { padding: 6px 0; border: 0; background: transparent; color: #a34c43; cursor: pointer; font-size: 11px; font-weight: 700; }
+.delete-link:hover:not(:disabled) { color: #7d3029; text-decoration: underline; text-underline-offset: 3px; }
+.delete-link:disabled { cursor: wait; opacity: 0.55; }
 .table-footnote { margin: 0; padding: 12px 17px; border-top: 1px solid #e8eee9; color: #839087; font-size: 10px; }
 
 .empty-state, .state-panel {

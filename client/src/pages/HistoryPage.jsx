@@ -14,6 +14,7 @@ export default function HistoryPage() {
   const [analyses, setAnalyses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [deletingId, setDeletingId] = useState(null);
 
   useEffect(() => {
     let active = true;
@@ -32,6 +33,22 @@ export default function HistoryPage() {
     loadHistory();
     return () => { active = false; };
   }, []);
+
+  async function handleDelete(analysis) {
+    const confirmed = window.confirm(`Delete the review for "${analysis.originalFilename}"? This cannot be undone.`);
+    if (!confirmed) return;
+
+    try {
+      setDeletingId(analysis.id);
+      setError('');
+      await api.delete(`/resume/analysis/${analysis.id}`);
+      setAnalyses((current) => current.filter((item) => item.id !== analysis.id));
+    } catch (requestError) {
+      setError(requestError.response?.data?.message || 'Could not delete this review.');
+    } finally {
+      setDeletingId(null);
+    }
+  }
 
   return (
     <div className="page-container content-page">
@@ -59,7 +76,7 @@ export default function HistoryPage() {
         <div className="history-table-wrap">
           <table className="history-table">
             <thead>
-              <tr><th scope="col">Resume</th><th scope="col">Reviewed</th><th scope="col">Resume score</th><th scope="col">ATS score</th><th scope="col"><span className="visually-hidden">Action</span></th></tr>
+              <tr><th scope="col">Resume</th><th scope="col">Reviewed</th><th scope="col">Resume score</th><th scope="col">ATS score</th><th scope="col"><span className="visually-hidden">Actions</span></th></tr>
             </thead>
             <tbody>
               {analyses.map((analysis) => (
@@ -68,7 +85,18 @@ export default function HistoryPage() {
                   <td className="muted-cell">{formatDate(analysis.createdAt)}</td>
                   <td><span className="table-score">{analysis.resumeScore ?? '—'}<small>/100</small></span></td>
                   <td><span className="table-score">{analysis.atsScore ?? '—'}<small>%</small></span></td>
-                  <td><Link className="table-link" to={`/analysis/${analysis.id}`}>View review <span aria-hidden="true">→</span></Link></td>
+                  <td className="history-actions">
+                    <Link className="table-link" to={`/analysis/${analysis.id}`}>View <span aria-hidden="true">→</span></Link>
+                    <button
+                      className="delete-link"
+                      type="button"
+                      onClick={() => handleDelete(analysis)}
+                      disabled={deletingId === analysis.id}
+                      aria-label={`Delete review for ${analysis.originalFilename}`}
+                    >
+                      {deletingId === analysis.id ? 'Deleting…' : 'Delete'}
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
